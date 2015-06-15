@@ -1,16 +1,18 @@
 require('./polyfills/broadcastchannel.js');
 require('object.observe/dist/object-observe-lite.js');
 
-window.CrossTalk = (object, channel) => {
+window.CrossTalk = (object, channel, handler) => {
   'use strict';
 
   // Variadic check
   if (typeof object === 'string') {
+    handler = channel;
     channel = object;
     object = {};
   }
 
   var self = {};
+  handler = handler || function () {};
 
   // Helper because we'll do this often
   let updateWith = (object) => {
@@ -37,7 +39,6 @@ window.CrossTalk = (object, channel) => {
 
   // Add observers
   Object.observe(self, (change) => {
-    console.log(change);
     self._broadcastChannel.postMessage({
       type: 'update',
       data: self
@@ -54,15 +55,13 @@ window.CrossTalk = (object, channel) => {
     switch (message.data.type) {
     case 'update':
       updateWith(message.data.data);
+      handler(message.data.data);
       break;
     case 'ping':
       self._broadcastChannel.postMessage({
-        type: 'pong',
+        type: 'update',
         data: self
       });
-      break;
-    case 'pong':
-      updateWith(message.data.data);
       break;
     default:
       break;
