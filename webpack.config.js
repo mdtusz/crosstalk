@@ -1,7 +1,7 @@
 module.exports = {
   entry: './src/crosstalk.js',
   output: {
-    path: __dirname + '/build',
+    path: __dirname + '/dist',
     filename: 'crosstalk.min.js',
   },
   module: {
