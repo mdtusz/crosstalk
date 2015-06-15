@@ -7,7 +7,7 @@ This is a very small, single constructor "library" that will let you create cros
 
 Ensure you have added the `crosstalk.min.js` script, then you can create an object by passing in an object and the name of the channel it will use. Every object created should use a unique name, otherwise the objects will conflict and update other objects that aren't their cross-window/tab counterparts. Using the `new` keyword is not necessary, but you may use it if you wish.
 
-```
+``` javascript
 var foo = CrossTalk({
   first: 'Morty',
   last: 'Sanchez'
@@ -18,7 +18,7 @@ var foo = CrossTalk({
 
 Or alternatively:
 
-```
+``` javascript
 var bar = new CrossTalk('barChan');
 
 // bar will be {}
@@ -28,7 +28,7 @@ When a new window is opened on the same domain, running the same script, any obj
 
 Changing attributes of a CrossTalk object is the same as normal:
 
-```
+``` javascript
 foo.first = 'Rick';
 foo.catchPhrase = 'wubba lubba dub dubs'; 
 // foo will reflect the new and updated properties in other windows
