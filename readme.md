@@ -1,4 +1,4 @@
-# Crosstalk
+# [Crosstalk](http://mdtusz.github.io/crosstalk)
 
 This is a very small, single constructor "library" that will let you create cross-window/tab sync-able objects. It makes use of modern features such as `Object.observe` and `BroadcastChannel` so there are no guarantees it will work everywhere, but it uses polyfills to work in current Chrome, Firefox, and Safari.
 
