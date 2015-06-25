@@ -1,5 +1,4 @@
 require('./polyfills/broadcastchannel.js');
-require('object.observe/dist/object-observe-lite.js');
 
 var CrossTalk = function (object, channel, handler) {
   'use strict';
@@ -19,13 +18,6 @@ var CrossTalk = function (object, channel, handler) {
 
   var self = this;
 
-  // Helper because we'll do this often
-  let updateWith = (object) => {
-    for (let attr in object) {
-      self._data[attr] = object[attr];
-    }
-  };
-
   // Create new broadcast channel
   let bc = new BroadcastChannel(channel);
 
@@ -43,31 +35,17 @@ var CrossTalk = function (object, channel, handler) {
       configurable: false,
       value: handler || function () {}
     },
-    _locked: {
-      writable: true,
-      enumerable: false,
-      configurable: false,
-      value: false
-    },
     _data: {
       writable: true,
       enumerable: false,
       configurable: false,
       value: object
-    }
-  });
-
-  // Add observers
-  Object.observe(self._data, (change) => {
-    if (!self._locked) {
-      // Sync/update
-      self._broadcastChannel.postMessage({
-        type: 'update',
-        data: self._data
-      });
-    } else {
-      // Unlock after sync/update
-      self._locked = false;
+    },
+    _instance: {
+      writable: true,
+      enumerable: false,
+      configurable: false,
+      value: 0
     }
   });
 
@@ -76,15 +54,27 @@ var CrossTalk = function (object, channel, handler) {
     switch (message.data.type) {
     case 'requestSync':
       self._broadcastChannel.postMessage({
-        type: 'update',
-        data: self
+        type: 'pushSync',
+        data: self._data
       });
       break;
-    case 'update':
-      // Lock data observer and unlock once change has been made
-      self._locked = true;
-      updateWith(message.data);
-      self._handler(message.data);
+    case 'pushSync':
+      self._data = message.data.data;
+      self._handler(self._data);
+      break;
+    case 'requestInit':
+      self._broadcastChannel.postMessage({
+        type: 'pushInit',
+        data: {
+          data: self._data,
+          instance: self._instance + 1
+        }
+      });
+      break;
+    case 'pushInit':
+      self._instance = Math.max(self._instance, message.data.data.instance);
+      self._data = message.data.data.data;
+      self._handler(self._data);
       break;
     default:
       break;
@@ -92,28 +82,54 @@ var CrossTalk = function (object, channel, handler) {
   };
 
   // Sync with other window(s).
-  self.sync();
+  self._broadcastChannel.postMessage({
+    type: 'requestInit'
+  });
 
   return self;
 };
 
 CrossTalk.prototype.set = function (attr, value) {
-  this._data.attr = value;
-  return this._data.attr;
+  if (typeof attr === 'string') {
+    this._data[attr] = value;
+    this.sync(this._data);
+    this._handler(this.data);
+    return this._data[attr];
+  } else if (typeof attr === 'object') {
+    this._data = attr;
+    this.sync(this._data);
+    this._handler(this.data);
+    return this._data;
+  }
 };
 
 CrossTalk.prototype.get = function (attr) {
-  return this._data.attr;
+  if (typeof attr === 'string') {
+    return this._data[attr];
+  } else {
+    return this._data;
+  }
+};
+
+CrossTalk.prototype.sync = function (data) {
+  if (data === undefined) {
+    this._broadcastChannel.postMessage({
+      type: 'requestSync'
+    });
+  } else {
+    this._broadcastChannel.postMessage({
+      type: 'pushSync',
+      data: this._data
+    });
+  }
+};
+
+CrossTalk.prototype.getInstance = function () {
+  return this._instance;
 };
 
 CrossTalk.prototype.getChannel = function () {
   return this._broadcastChannel._name;
-};
-
-CrossTalk.prototype.sync = function () {
-  this._broadcastChannel.postMessage({
-    type: 'requestSync'
-  });
 };
 
 window.CrossTalk = CrossTalk;

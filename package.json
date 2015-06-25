@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "A cross-window object constructor",
   "main": "webpack.config.js",
-  "dependencies": {
-    "object.observe": "^0.2.4"
-  },
   "devDependencies": {
     "babel": "^5.5.8",
     "babel-core": "^5.5.8",
