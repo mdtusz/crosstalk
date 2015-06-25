@@ -93,7 +93,7 @@ CrossTalk.prototype.set = function (attr, value) {
   if (typeof attr === 'string') {
     this._data[attr] = value;
     this.sync(this._data);
-    this._handler(this.data);
+    this._handler(this._data);
     return this._data[attr];
   } else if (typeof attr === 'object') {
     this._data = attr;
@@ -122,6 +122,10 @@ CrossTalk.prototype.sync = function (data) {
       data: this._data
     });
   }
+};
+
+CrossTalk.prototype.setHandler = function (handler) {
+  this._handler = handler || function () {};
 };
 
 CrossTalk.prototype.getInstance = function () {
