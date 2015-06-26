@@ -1,30 +1,48 @@
-// (function () {
-//   'use strict';
+(function () {
+  'use strict';
 
-var md = window.markdownit();
-var text = new CrossTalk('editorChannel');
+  var md = window.markdownit();
+  var doc = new CrossTalk('editorChannel');
 
-var preview = document.getElementById('preview');
-var editor = document.getElementById('editor');
+  var preview = document.getElementById('preview');
+  var editor = document.getElementById('editor');
 
-setTimeout(function () {
-  console.log(text.getInstance());
-  if (text.getInstance() % 2 === 0) {
-    // Preview window(s)
-    preview.setAttribute('class', '');
+  var editToggle = document.getElementById('edit_toggle');
+  var previewToggle = document.getElementById('preview_toggle');
 
-    text.setHandler(function (data) {
-      // Update markdown preview.
-      console.log('Change handler fired!');
-    });
-  } else {
-    // Editor window
-    editor.setAttribute('class', '');
+  var markdown = document.getElementById('markdown');
+  var rendered = document.getElementById('rendered');
+
+  function update() {
+    console.log(doc.get('text'));
+    markdown.value = doc.get('text');
+    rendered.innerHTML = md.render(markdown.value);
+    markdown.setAttribute('style', 'height: ' + markdown.scrollHeight + 'px;');
   }
-}, 200);
 
+  editToggle.addEventListener('click', function () {
+    editToggle.setAttribute('class', 'active');
+    editor.setAttribute('class', '');
+    previewToggle.setAttribute('class', '');
+    preview.setAttribute('class', 'hidden');
+  });
 
-var markdown = document.getElementById('markdown');
+  previewToggle.addEventListener('click', function () {
+    editToggle.setAttribute('class', '');
+    editor.setAttribute('class', 'hidden');
+    previewToggle.setAttribute('class', 'active');
+    preview.setAttribute('class', '');
+  });
 
-console.log(md.render('# Hello World'));
-// })();
+  doc.setHandler(function (doc) {
+    markdown.value = doc.text;
+    rendered.innerHTML = md.render(doc.text);
+    markdown.setAttribute('style', 'height: ' + markdown.scrollHeight + 'px;');
+  });
+
+  markdown.addEventListener('input', function () {
+    markdown.setAttribute('style', 'height: ' + markdown.scrollHeight + 'px;');
+    rendered.innerHTML = md.render(doc.set('text', markdown.value));
+  });
+
+})();

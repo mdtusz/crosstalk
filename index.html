@@ -8,15 +8,15 @@
     <script src="dist/crosstalk.min.js"></script>
   </head>
   <body>
-    <div id="editor" class="hidden">
-      <h1>edit</h1>
-      <div id="markdown" contenteditable class="text">
-        Write some text here. 
-      </div>
+    <h1 class="title">
+      <span id="edit_toggle" class="active">edit</span>
+      <span id="preview_toggle">preview</span>
+    </h1>
+    <div id="editor">  
+      <textarea id="markdown" class="text" placeholder="Write some text here."></textarea>
     </div>
     <div id="preview" class="hidden">
-      <h1>preview</h1>
-      <div class="text">
+      <div id="rendered">
         
       </div>
     </div>
