@@ -1,0 +1,32 @@
+*{
+  box-sizing: border-box;
+  outline: none;
+}
+html{
+  background-color: #fffff6;
+  color: #444445;
+  font-family: 'Helvetica', sans-serif;
+}
+body{
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 10px;
+}
+h1{
+  border-bottom: 2px dashed #afbfaf;
+  font-weight: 100;
+  line-height: 50px;
+  letter-spacing: 6px;
+}
+#markdown{
+  font-family: 'Courier', monospace;
+  letter-spacing: 1px;
+  line-height: 22px;
+}
+.hidden{
+  display: none;
+}
+.text{
+  letter-spacing: 1px;
+  line-height: 22px; 
+}

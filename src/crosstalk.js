@@ -1,8 +1,13 @@
 require('./polyfills/broadcastchannel.js');
-require('object.observe/dist/object-observe-lite.js');
 
-window.CrossTalk = (object, channel, handler) => {
+var CrossTalk = function (object, channel, handler) {
   'use strict';
+
+  if (object === undefined || object === '') {
+    let err = new Error('channel required (at minimum)');
+    console.error(err);
+    return;
+  }
 
   // Variadic check
   if (typeof object === 'string') {
@@ -11,18 +16,7 @@ window.CrossTalk = (object, channel, handler) => {
     object = {};
   }
 
-  var self = {};
-  handler = handler || function () {};
-
-  // Helper because we'll do this often
-  let updateWith = (object) => {
-    for (let attr in object) {
-      self[attr] = object[attr];
-    }
-  };
-
-  // Initialize with passed in object
-  updateWith(object);
+  var self = this;
 
   // Create new broadcast channel
   let bc = new BroadcastChannel(channel);
@@ -34,39 +28,112 @@ window.CrossTalk = (object, channel, handler) => {
       enumerable: false,
       configurable: false,
       value: bc
+    },
+    _handler: {
+      writable: true,
+      enumerable: false,
+      configurable: false,
+      value: handler || function () {}
+    },
+    _data: {
+      writable: true,
+      enumerable: false,
+      configurable: false,
+      value: object
+    },
+    _instance: {
+      writable: true,
+      enumerable: false,
+      configurable: false,
+      value: 0
     }
-  });
-
-  // Add observers
-  Object.observe(self, (change) => {
-    self._broadcastChannel.postMessage({
-      type: 'update',
-      data: self
-    });
-  });
-
-  // Sync objects with ping pong on creation
-  self._broadcastChannel.postMessage({
-    type: 'ping'
   });
 
   // Message handler
   self._broadcastChannel.onmessage = (message) => {
     switch (message.data.type) {
-    case 'update':
-      updateWith(message.data.data);
-      handler(message.data.data);
-      break;
-    case 'ping':
+    case 'requestSync':
       self._broadcastChannel.postMessage({
-        type: 'update',
-        data: self
+        type: 'pushSync',
+        data: self._data
       });
+      break;
+    case 'pushSync':
+      self._data = message.data.data;
+      self._handler(self._data);
+      break;
+    case 'requestInit':
+      self._broadcastChannel.postMessage({
+        type: 'pushInit',
+        data: {
+          data: self._data,
+          instance: self._instance + 1
+        }
+      });
+      break;
+    case 'pushInit':
+      self._instance = Math.max(self._instance, message.data.data.instance);
+      self._data = message.data.data.data;
+      self._handler(self._data);
       break;
     default:
       break;
     }
   };
 
+  // Sync with other window(s).
+  self._broadcastChannel.postMessage({
+    type: 'requestInit'
+  });
+
   return self;
 };
+
+CrossTalk.prototype.set = function (attr, value) {
+  if (typeof attr === 'string') {
+    this._data[attr] = value;
+    this.sync(this._data);
+    this._handler(this._data);
+    return this._data[attr];
+  } else if (typeof attr === 'object') {
+    this._data = attr;
+    this.sync(this._data);
+    this._handler(this.data);
+    return this._data;
+  }
+};
+
+CrossTalk.prototype.get = function (attr) {
+  if (typeof attr === 'string') {
+    return this._data[attr];
+  } else {
+    return this._data;
+  }
+};
+
+CrossTalk.prototype.sync = function (data) {
+  if (data === undefined) {
+    this._broadcastChannel.postMessage({
+      type: 'requestSync'
+    });
+  } else {
+    this._broadcastChannel.postMessage({
+      type: 'pushSync',
+      data: this._data
+    });
+  }
+};
+
+CrossTalk.prototype.setHandler = function (handler) {
+  this._handler = handler || function () {};
+};
+
+CrossTalk.prototype.getInstance = function () {
+  return this._instance;
+};
+
+CrossTalk.prototype.getChannel = function () {
+  return this._broadcastChannel._name;
+};
+
+window.CrossTalk = CrossTalk;
